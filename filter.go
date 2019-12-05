@@ -1,6 +1,7 @@
 package refilter
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -49,9 +50,11 @@ func FilterByObject(tx *gorm.DB, obj interface{}, tableName string) *gorm.DB {
 func queryByFieldType(tx *gorm.DB, typeArg reflect.Kind, value interface{}, name, tableName string) *gorm.DB {
 	switch typeArg {
 	case reflect.String:
-		tx = tx.Where("?.? LIKE ?", tableName, normalizeFieldName(name), "%"+value.(string)+"%")
+		query := fmt.Sprintf("%s.%s LIKE ?", tableName, normalizeFieldName(name))
+		tx = tx.Where(query, "%"+value.(string)+"%")
 	case reflect.Bool, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64, reflect.Complex64, reflect.Complex128, reflect.Struct:
-		tx = tx.Where("?.? ? ?", tableName, normalizeFieldName(name), getComparisonType(name), value)
+		query := fmt.Sprintf("%s.%s %s ?", tableName, normalizeFieldName(name), getComparisonType(name))
+		tx = tx.Where(query, value)
 	default:
 		panic("Invalid type field to query")
 	}
