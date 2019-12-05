@@ -22,7 +22,7 @@ const (
 
 // FilterByObject filters all fields from object
 // is used to query filter objects from gqlgen
-func FilterByObject(tx *gorm.DB, obj interface{}) *gorm.DB {
+func FilterByObject(tx *gorm.DB, obj interface{}, tableName string) *gorm.DB {
 	s := reflect.ValueOf(obj)
 	t := reflect.TypeOf(obj)
 
@@ -41,19 +41,19 @@ func FilterByObject(tx *gorm.DB, obj interface{}) *gorm.DB {
 			field = field.Elem()
 		}
 
-		tx = queryByFieldType(tx, field.Kind(), field.Interface(), t.Field(i).Name)
+		tx = queryByFieldType(tx, field.Kind(), field.Interface(), t.Field(i).Name, tableName)
 	}
 
 	return tx
 }
 
-func queryByFieldType(tx *gorm.DB, typeArg reflect.Kind, value interface{}, name string) *gorm.DB {
+func queryByFieldType(tx *gorm.DB, typeArg reflect.Kind, value interface{}, name, tableName string) *gorm.DB {
 	switch typeArg {
 	case reflect.String:
-		query := fmt.Sprintf("\"%s\" LIKE ?", normalizeFieldName(name))
+		query := fmt.Sprintf("\"%s.%s\" LIKE ?", tableName, normalizeFieldName(name))
 		tx = tx.Where(query, "%"+value.(string)+"%")
 	case reflect.Bool, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64, reflect.Complex64, reflect.Complex128, reflect.Struct:
-		query := fmt.Sprintf("\"%s\" %s ?", normalizeFieldName(name), getComparisonType(name))
+		query := fmt.Sprintf("\"%s.%s\" %s ?", tableName, normalizeFieldName(name), getComparisonType(name))
 		tx = tx.Where(query, value)
 	default:
 		panic("Invalid type field to query")
