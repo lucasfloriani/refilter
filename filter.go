@@ -51,7 +51,10 @@ func queryByFieldType(tx *gorm.DB, typeArg reflect.Kind, value interface{}, name
 	switch typeArg {
 	case reflect.String:
 		query := fmt.Sprintf("unaccent(LOWER(%s.%s)) LIKE unaccent(LOWER(?))", tableName, normalizeFieldName(name))
-		tx = tx.Where(query, "%"+value.(string)+"%")
+		listOfTermsToSearch := strings.Fields(value.(string))
+		for _, term := range listOfTermsToSearch {
+			tx = tx.Where(query, "%"+term+"%")
+		}
 	case reflect.Bool, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64, reflect.Complex64, reflect.Complex128, reflect.Struct:
 		query := fmt.Sprintf("%s.%s %s ?", tableName, normalizeFieldName(name), getComparisonType(name))
 		tx = tx.Where(query, value)
